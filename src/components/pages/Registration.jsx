@@ -1,8 +1,9 @@
+import Cookies from 'js-cookie'
 import React from 'react'
 import { useLocation,useNavigate } from 'react-router-dom'
 
 export default function Login() {
-  const [loginFormData,setLoginFormData] = React.useState({username:"",password:""})
+  const [registrationFormData,setRegistrationFormData] = React.useState({name:"",email:"",password:"",confirm_password:""})
   const location = useLocation()
   console.log(location)
   const [status,setStatus] = React.useState("idle")
@@ -11,7 +12,7 @@ export default function Login() {
   const from = location.state?.from || "/post";
   function handleChange(e){
     const {name,value} = e.target;
-    setLoginFormData((prev)=>({
+    setRegistrationFormData((prev)=>({
       ...prev,
       [name]:value
     }))
@@ -19,26 +20,31 @@ export default function Login() {
   function handleSubmit(e){
     e.preventDefault()
     setStatus("submitting")
-    fetch(`http://demoyourprojects.com:5085/auth/signin`,{
+    fetch(`http://demoyourprojects.com:5085/auth/signup`,{
       method:'post',
       headers: {
         'Content-Type': 'application/json'
       },
-      body:JSON.stringify(loginFormData)
+      body:JSON.stringify(registrationFormData)
     })
     .then(res=>res.json())
     .then(data=>{
-     
-      console.log(data)
-      localStorage.setItem("loggedin", true)
-      localStorage.setItem("token", data.access_token)
-      localStorage.setItem("user", data.user)
-
+      Cookies.set("loggedin", true, {
+        expires: 1,
+      });
+      Cookies.set("token",data.data.access_token, {
+        expires: 1,
+      });
+      Cookies.set("user", JSON.stringify(data.data.user), {
+        expires: 1,
+      });
+console.log(data)
       setError(null)
       
       navigate(from,{replace:true})
     })
     .catch(err=>{
+      console.log(err)
       setError(err)
     }).finally(()=>{
       setStatus("idle")
@@ -46,27 +52,40 @@ export default function Login() {
   }
   return (
     <div className="login-container">
-      { location.state?.message && <h3 className='login-first'>{location.state.message}</h3>}
-      <h1>Sign in to your account</h1>
+      <h1>Sign up form</h1>
       <form onSubmit={handleSubmit} className='login-form'>
         <input 
-          name='username'
+          name='name'
+          onChange={handleChange}
+          type='text'
+          placeholder='Name'
+          value={registrationFormData.name}
+        />
+         <input 
+          name='email'
           onChange={handleChange}
           type='email'
           placeholder='Email Address'
-          value={loginFormData.username}
+          value={registrationFormData.email}
         />
         <input
           name='password'
           onChange={handleChange}
           type='password'
           placeholder='Password'
-          value={loginFormData.password}
+          value={registrationFormData.password}
+        />
+         <input
+          name='confirm_password'
+          onChange={handleChange}
+          type='password'
+          placeholder='Confirm Password'
+          value={registrationFormData.confirm_password}
         />
         <button
         disabled={status === "submitting"}
         >{
-          status === "submitting"?"Logging in":"Login"
+          status === "submitting"?"Registering...":"Sign Up"
           }</button>
       </form>
     </div>
